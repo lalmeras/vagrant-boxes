@@ -1,3 +1,4 @@
 *.swp
 packer_cache
 images/
+output-virtualbox-iso/
