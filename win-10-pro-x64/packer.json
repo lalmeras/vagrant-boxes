@@ -26,7 +26,9 @@
       "vm_name": "windows_10",
       "winrm_password": "vagrant",
       "winrm_timeout": "{{user `winrm_timeout`}}",
-      "winrm_username": "vagrant"
+      "winrm_username": "vagrant",
+      "nested_virt": true,
+      "gfx_vram_size": 128
     }
   ],
   "post-processors": [
