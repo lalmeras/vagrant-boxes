@@ -38,6 +38,13 @@
         [
           "-drive",
           "file={{ user `virtio_win_iso` }},media=cdrom,index=3"
+        ],
+        [
+          "-usb"
+        ],
+        [
+          "-device",
+          "usb-tablet"
         ]
       ]
     },
