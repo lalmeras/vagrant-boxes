@@ -1,11 +1,18 @@
 {
   "builders": [
     {
-      "boot_command": "",
+      "vm_name": "windows_10",
       "boot_wait": "6m",
       "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "winrm_timeout": "{{user `winrm_timeout`}}",
       "cpus": 2,
+      "memory": 2048,
       "disk_size": "{{user `disk_size`}}",
+      "headless": true,
+      "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
+      "iso_url": "{{user `iso_url`}}",
       "floppy_files": [
         "{{ template_dir }}/answer_files/Autounattend.xml",
         "{{ template_dir }}/scripts/fixnetwork.ps1",
@@ -15,18 +22,52 @@
         "{{ template_dir }}/scripts/microsoft-updates.bat",
         "{{ template_dir }}/scripts/win-updates.ps1"
       ],
-      "guest_additions_mode": "disable",
-      "guest_os_type": "Windows10_64",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "output_directory": "windows_10-qemu",
+      "type": "qemu",
+      "accelerator": "kvm",
+      "qemuargs": [
+        [
+          "-drive",
+          "file=windows_10-qemu/{{ .Name }},if=virtio,cache=writeback,discard=ignore,format=qcow2,index=1"
+        ],
+        [
+          "-drive",
+          "file={{ user `iso_url` }},media=cdrom,index=2"
+        ],
+        [
+          "-drive",
+          "file={{ user `virtio_win_iso` }},media=cdrom,index=3"
+        ]
+      ]
+    },
+    {
+      "vm_name": "windows_10",
+      "boot_wait": "6m",
+      "communicator": "winrm",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "winrm_timeout": "{{user `winrm_timeout`}}",
+      "cpus": 2,
+      "memory": 2048,
+      "disk_size": "{{user `disk_size`}}",
       "headless": "{{user `headless`}}",
       "iso_checksum": "{{user `iso_checksum_type`}}:{{user `iso_checksum`}}",
       "iso_url": "{{user `iso_url`}}",
-      "memory": 2048,
+      "floppy_files": [
+        "{{ template_dir }}/answer_files/Autounattend.xml",
+        "{{ template_dir }}/scripts/fixnetwork.ps1",
+        "{{ template_dir }}/scripts/disable-screensaver.ps1",
+        "{{ template_dir }}/scripts/disable-winrm.ps1",
+        "{{ template_dir }}/scripts/enable-winrm.ps1",
+        "{{ template_dir }}/scripts/microsoft-updates.bat",
+        "{{ template_dir }}/scripts/win-updates.ps1"
+      ],
       "shutdown_command": "shutdown /s /t 10 /f /d p:4:1 /c \"Packer Shutdown\"",
+      "output_directory": "windows_10-virtualbox",
       "type": "virtualbox-iso",
-      "vm_name": "windows_10",
-      "winrm_password": "vagrant",
-      "winrm_timeout": "{{user `winrm_timeout`}}",
-      "winrm_username": "vagrant",
+      "guest_additions_mode": "disable",
+      "guest_os_type": "Windows10_64",
       "nested_virt": true,
       "gfx_vram_size": 128
     }
