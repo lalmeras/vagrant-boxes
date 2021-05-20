@@ -3,3 +3,4 @@ packer_cache
 images/
 output-virtualbox-iso/
 *.box
+__pycache__/

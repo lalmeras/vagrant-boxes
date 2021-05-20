@@ -7,6 +7,7 @@
             versionScope="nonSxS" processorArchitecture="amd64"
             xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
 
+{% if libvirt | default(False) %}
             <!--
                  This makes the VirtIO drivers available to Windows, assuming that
                  the VirtIO driver disk at https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso
@@ -54,6 +55,7 @@
                     <Path>E:\vioserial\w10\amd64</Path>
                 </PathAndCredentials>
             </DriverPaths>
+{% endif %}
         </component>
         
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
@@ -116,7 +118,7 @@
                     <InstallFrom>
                         <MetaData wcm:action="add">
                             <Key>/IMAGE/NAME</Key>
-                            <Value>Windows 10 Pro</Value>
+                            <Value>{{ windows_version | default("Windows 10 Pro") }}</Value>
                         </MetaData>
                     </InstallFrom>
                 </OSImage>
@@ -124,13 +126,13 @@
         </component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SetupUILanguage>
-                <UILanguage>fr-FR</UILanguage>
+                <UILanguage>{{ locale_ui_language | default(locale_language) | default("en-US") }}</UILanguage>
             </SetupUILanguage>
-            <InputLocale>fr-FR</InputLocale>
-            <SystemLocale>fr-FR</SystemLocale>
-            <UILanguage>fr-FR</UILanguage>
-            <UILanguageFallback>fr-FR</UILanguageFallback>
-            <UserLocale>fr-FR</UserLocale>
+            <InputLocale>{{ locale_input_locale | default(locale_language) | default("en-US") }}</InputLocale>
+            <SystemLocale>{{ locale_system_language | default(locale_language) | default("en-US") }}</SystemLocale>
+            <UILanguage>{{ locale_ui_language | default(locale_language) | default("en-US") }}</UILanguage>
+            <UILanguageFallback>{{ locale_ui_language_fallback | default(locale_language) | default("en-US") }}</UILanguageFallback>
+            <UserLocale>{{ locale_user_locale | default(locale_language) | default("en-US") }}</UserLocale>
         </component>
     </settings>
     <settings pass="offlineServicing">
@@ -140,10 +142,10 @@
     </settings>
     <settings pass="oobeSystem">
         <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            <InputLocale>fr-FR</InputLocale>
-            <SystemLocale>fr-FR</SystemLocale>
-            <UILanguage>fr-FR</UILanguage>
-            <UserLocale>fr-FR</UserLocale>
+            <InputLocale>{{ locale_input_locale | default(locale_language) | default("en-US") }}</InputLocale>
+            <SystemLocale>{{ locale_system_language | default(locale_language) | default("en-US") }}</SystemLocale>
+            <UserLocale>{{ locale_user_locale | default(locale_language) | default("en-US") }}</UserLocale>
+            <UILanguage>{{ locale_ui_language | default(locale_language) | default("en-US") }}</UILanguage>
         </component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <UserAccounts>
@@ -179,6 +181,7 @@
                 <Enabled>true</Enabled>
             </AutoLogon>
             <FirstLogonCommands>
+{% if set_execution_policy | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c powershell -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Force"</CommandLine>
                     <Description>Set Execution Policy 64 Bit</Description>
@@ -191,12 +194,16 @@
                     <Order>2</Order>
                     <RequiresUserInput>true</RequiresUserInput>
                 </SynchronousCommand>
+{% endif %}
+{% if disable_network_wizard | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c reg add "HKLM\System\CurrentControlSet\Control\Network\NewNetworkWindowOff"</CommandLine>
                     <Description>Network prompt</Description>
                     <Order>3</Order>
                     <RequiresUserInput>true</RequiresUserInput>
                 </SynchronousCommand>
+{% endif %}
+{% if prepare_winrm | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -File a:\fixnetwork.ps1</CommandLine>
                     <Description>Fix public network</Description>
@@ -209,26 +216,8 @@
                     <Order>5</Order>
                     <RequiresUserInput>true</RequiresUserInput>
                 </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\ /v HideFileExt /t REG_DWORD /d 0 /f</CommandLine>
-                    <Order>6</Order>
-                    <Description>Show file extensions in Explorer</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\Console /v QuickEdit /t REG_DWORD /d 1 /f</CommandLine>
-                    <Order>7</Order>
-                    <Description>Enable QuickEdit mode</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\ /v Start_ShowRun /t REG_DWORD /d 1 /f</CommandLine>
-                    <Order>8</Order>
-                    <Description>Show Run command in Start Menu</Description>
-                </SynchronousCommand>
-                <SynchronousCommand wcm:action="add">
-                    <CommandLine>%SystemRoot%\System32\reg.exe ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\ /v StartMenuAdminTools /t REG_DWORD /d 1 /f</CommandLine>
-                    <Order>9</Order>
-                    <Description>Show Administrative Tools in Start Menu</Description>
-                </SynchronousCommand>
+{% endif %}
+{% if disable_hibernation | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD HKLM\SYSTEM\CurrentControlSet\Control\Power\ /v HibernateFileSizePercent /t REG_DWORD /d 0 /f</CommandLine>
                     <Order>10</Order>
@@ -239,11 +228,15 @@
                     <Order>11</Order>
                     <Description>Disable Hibernation Mode</Description>
                 </SynchronousCommand>
+{% endif %}
+{% if disable_password_expiration | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c wmic useraccount where "name='vagrant'" set PasswordExpires=FALSE</CommandLine>
                     <Order>12</Order>
                     <Description>Disable password expiration for vagrant user</Description>
                 </SynchronousCommand>
+{% endif %}
+{% if enable_autologon | default(True) %}
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>%SystemRoot%\System32\reg.exe ADD "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v DefaultPassword /t REG_SZ /d "vagrant" /f</CommandLine>
                     <Order>13</Order>
@@ -254,15 +247,16 @@
                     <Order>14</Order>
                     <Description>Enable AutoLogon</Description>
                 </SynchronousCommand>
+{% endif %}
+{% if not perform_update | default(True) %}
                 <!-- WITHOUT WINDOWS UPDATES -->
-                <!--
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -File a:\enable-winrm.ps1</CommandLine>
                     <Description>Enable WinRM</Description>
                     <Order>99</Order>
                 </SynchronousCommand>
-                -->
                 <!-- END WITHOUT WINDOWS UPDATES -->
+{% else %}
                 <!-- WITH WINDOWS UPDATES -->
                 <SynchronousCommand wcm:action="add">
                     <CommandLine>cmd.exe /c a:\microsoft-updates.bat</CommandLine>
@@ -282,6 +276,7 @@
                     <RequiresUserInput>true</RequiresUserInput>
                 </SynchronousCommand>
                 <!-- END WITH WINDOWS UPDATES -->
+{% endif %}
             </FirstLogonCommands>
             <ShowWindowsLive>false</ShowWindowsLive>
         </component>
@@ -292,13 +287,12 @@
                 <HelpCustomized>false</HelpCustomized>
             </OEMInformation>
             <!-- Rename computer here. -->
-            <ComputerName>vagrant-10</ComputerName>
-            <TimeZone>Pacific Standard Time</TimeZone>
+            <ComputerName>{{ computer_name | default("Windows10") }}</ComputerName>
+            <TimeZone>{{ timezone | default("Pacific Standard Time") }}</TimeZone>
             <RegisteredOwner/>
         </component>
         <component xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="Microsoft-Windows-Security-SPP-UX" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
             <SkipAutoActivation>true</SkipAutoActivation>
         </component>
     </settings>
-    <cpi:offlineImage xmlns:cpi="urn:schemas-microsoft-com:cpi" cpi:source="catalog:d:/sources/install_windows 7 ENTERPRISE.clg"/>
 </unattend>

@@ -1,0 +1,15 @@
+{
+  "name": "lalmeras/windows10",
+  "description": "Windows 10 VM.",
+  "versions": [
+    {
+      "version": "1.0",
+      "providers": [
+        {
+          "name": "virtualbox",
+          "url": "./windows-10-pro-x64_virtualbox.box"
+        }
+      ]
+    }
+  ]
+}
